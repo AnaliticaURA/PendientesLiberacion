@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URA Industries · Flujo Productivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --charcoal:#2D2D2D; --sage:#C2C5A9; --sage-deep:#8B9B5E; --offwhite:#F1F1F1;
+  --gray:#D2D2D2; --vino:#582128; --vino-soft:#7A2E38; --cream:#F0E7D6; --teal:#9DBDB8; --teal-deep:#5F9187;
+  --ochre:#B0823A;
+  --bg:#F1F1F1; --panel:#FFFFFF; --panel-2:#FAF9F7; --ink:#2D2D2D; --ink-soft:#4a4a4a;
+  --muted:#8a8681; --line:#E4E1DB; --accent:var(--vino-soft); --brand:var(--sage-deep);
+  --ok:#5F7A3A; --ok-bg:#eef1e4; --warn:#B0823A; --warn-bg:#f7efe0;
+  --bad:#7A2E38; --bad-bg:#f6e7e8; --info:#5F9187; --info-bg:#e6efed;
+  --dev:#7A2E38; --mp:#8B9B5E; --ab:#B0823A; --dis:#5F9187;
+  --shadow:0 1px 2px rgba(45,45,45,.05),0 10px 30px -14px rgba(45,45,45,.22);
+}
+[data-theme="dark"]{
+  --bg:#232323; --panel:#2D2D2D; --panel-2:#333130; --ink:#F1F1F1; --ink-soft:#dcd8d2;
+  --muted:#9a958d; --line:#403e3c; --accent:#C98A94; --brand:var(--sage);
+  --ok:#A9C07E; --ok-bg:#2a3320; --warn:#D6A85C; --warn-bg:#332a17;
+  --bad:#D98B95; --bad-bg:#3a2225; --info:#8FBDB5; --info-bg:#1e2f2c;
+  --dev:#C98A94; --mp:#B3C185; --ab:#D6A85C; --dis:#8FBDB5;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 16px 40px -16px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:'Archivo',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  font-weight:400;-webkit-font-smoothing:antialiased;transition:background .35s,color .35s}
+.wrap{max-width:1320px;margin:0 auto;padding:22px 22px 40px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  padding-bottom:18px;border-bottom:1px solid var(--line)}
+.brand{display:flex;flex-direction:column;gap:10px}
+.wordmark{display:flex;align-items:center;gap:8px;color:var(--ink)}
+.wordmark svg{width:22px;height:22px}
+.wordmark b{font-weight:700;font-size:15px;letter-spacing:.2px}
+.wordmark span{font-weight:400;font-size:15px}
+h1{font-size:30px;margin:0;font-weight:800;letter-spacing:-.5px;line-height:1;text-transform:uppercase}
+.sub{color:var(--muted);font-size:13px;margin-top:7px;text-transform:uppercase;letter-spacing:1.5px;font-weight:500}
+.controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.upd{font-size:11px;color:var(--muted);text-align:right;line-height:1.5;text-transform:uppercase;letter-spacing:.5px}
+.upd b{color:var(--ink);font-weight:700;text-transform:none;letter-spacing:0;font-size:12.5px}
+.btn{cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);
+  border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:600;font-family:inherit;
+  display:flex;align-items:center;gap:7px;transition:transform .14s,border-color .2s,background .2s,color .2s}
+.btn:hover{transform:translateY(-1px);border-color:var(--ink)}
+.btn:active{transform:translateY(0)}
+.btn.cta{background:var(--vino);color:#fff;border-color:var(--vino)}
+.btn.cta:hover{background:var(--vino-soft);border-color:var(--vino-soft)}
+[data-theme="dark"] .btn.cta{background:var(--vino-soft);border-color:var(--vino-soft)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;margin:26px 0 6px;
+  background:var(--line);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.kpi{background:var(--panel);padding:20px 20px 18px;position:relative;transition:background .2s}
+.kpi:hover{background:var(--panel-2)}
+.kpi .top{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.kpi .top i{width:9px;height:9px;border-radius:2px;display:block}
+.kpi .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.kpi .n{font-size:44px;font-weight:800;line-height:.9;letter-spacing:-1.5px;font-variant-numeric:tabular-nums}
+.kpi .delta{font-size:11.5px;margin-top:8px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.delta.up{color:var(--bad)} .delta.down{color:var(--ok)} .delta.flat{color:var(--muted)}
+.toprow{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;margin-top:20px}
+@media(max-width:900px){.toprow{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+.panel h4{margin:0 0 4px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.panel .ph{color:var(--muted);font-size:11.5px;margin:0 0 14px}
+.cx{position:relative;height:250px}
+.toolbar{margin:26px 0 2px}
+.search{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);
+  border-radius:10px;padding:11px 15px;box-shadow:var(--shadow)}
+.search svg{width:16px;height:16px;color:var(--muted);flex:none}
+.search input{border:none;background:transparent;outline:none;color:var(--ink);font-size:14px;width:100%;font-family:inherit}
+.search input::placeholder{color:var(--muted)}
+.section-title{margin:38px 0 14px}
+.section-title .ttl{font-size:22px;font-weight:800;text-transform:uppercase;letter-spacing:-.3px;line-height:1;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.section-title .ttl .tag{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.section-title .rule{height:3px;width:54px;background:var(--brand);margin-top:12px;border-radius:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px}
+.dev-grid{grid-template-columns:repeat(auto-fit,minmax(min(600px,100%),1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden;
+  display:flex;flex-direction:column;opacity:0;transform:translateY(10px);animation:reveal .5s ease forwards}
+@keyframes reveal{to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.card .cap{height:4px;width:100%}
+.card h3{margin:0;padding:15px 17px 13px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--line)}
+.card h3 .lbl{display:flex;align-items:center;gap:9px}
+.card h3 .step{width:24px;height:24px;border-radius:7px;background:var(--charcoal);color:#fff;
+  font-size:12px;display:inline-flex;align-items:center;justify-content:center;font-weight:800}
+[data-theme="dark"] .card h3 .step{background:var(--sage);color:var(--charcoal)}
+.card h3 .cnt{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.card .hint{padding:9px 17px;font-size:11px;color:var(--muted);border-bottom:1px solid var(--line);background:var(--panel-2);letter-spacing:.2px}
+.tablewrap{overflow:auto;max-height:440px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:var(--panel);text-align:left;padding:9px 11px;font-size:10px;
+  text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:700;border-bottom:1px solid var(--line);z-index:1}
+td{padding:9px 11px;border-bottom:1px solid var(--line)}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .12s}
+tbody tr:hover td{background:var(--panel-2)}
+.idpill{font-weight:700;font-variant-numeric:tabular-nums}
+.proj{font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink)}
+.rank{display:inline-flex;min-width:26px;height:24px;padding:0 6px;border-radius:6px;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;background:var(--panel-2);color:var(--muted);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.rank.top{background:var(--vino);color:#fff;border-color:var(--vino)}
+[data-theme="dark"] .rank.top{background:var(--sage);color:var(--charcoal);border-color:var(--sage)}
+.empty{padding:32px 16px;text-align:center;color:var(--muted);font-size:13px}
+.badge{display:inline-block;padding:2px 9px;border-radius:5px;font-size:10.5px;font-weight:700;white-space:nowrap;letter-spacing:.2px}
+.b-ok{background:var(--ok-bg);color:var(--ok)} .b-pend{background:var(--warn-bg);color:var(--warn)}
+.b-rech{background:var(--bad-bg);color:var(--bad)} .b-aprob{background:var(--charcoal);color:#fff}
+[data-theme="dark"] .b-aprob{background:var(--sage);color:var(--charcoal)}
+.b-model{background:var(--info-bg);color:var(--info)} .b-pmod{background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
+.mem-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.mem-head span{font-size:11.5px;color:var(--muted)}
+.mem-list{max-height:260px;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.mem-item{display:flex;align-items:center;gap:13px;padding:11px 13px;border:1px solid var(--line);
+  border-radius:10px;background:var(--panel-2);font-size:12.5px}
+.mem-item .dotm{width:8px;height:8px;border-radius:50%;background:var(--brand);flex:none}
+.mem-item .fn{font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mem-item .tt{color:var(--muted);font-variant-numeric:tabular-nums}
+.mem-item .tag{background:var(--charcoal);color:#fff;border-radius:5px;padding:2px 9px;font-weight:700;font-size:11px}
+[data-theme="dark"] .mem-item .tag{background:var(--sage);color:var(--charcoal)}
+.linkbtn{cursor:pointer;background:none;border:none;color:var(--muted);font-size:11.5px;text-decoration:underline;font-family:inherit}
+.linkbtn:hover{color:var(--bad)}
+footer{margin-top:46px;padding-top:16px;border-top:2px solid var(--brand);
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer .tagline{font-size:12.5px;line-height:1.4;color:var(--ink)}
+footer .tagline b{font-weight:700}
+footer .fbrand{display:flex;align-items:center;gap:8px;color:var(--ink)}
+footer .fbrand svg{width:20px;height:20px}
+footer .fbrand .u b{font-weight:700;font-size:14px}
+footer .fbrand .u span{font-weight:400;font-size:14px}
+footer .fbrand .url{font-size:10.5px;color:var(--muted)}
+.hidden{display:none!important}
+#drop{position:fixed;inset:0;z-index:200;background:rgba(45,45,45,.72);display:none;align-items:center;justify-content:center}
+#drop.on{display:flex;animation:reveal .2s forwards}
+#drop .box{background:var(--panel);border:2px dashed var(--brand);border-radius:18px;padding:46px 62px;text-align:center;color:var(--ink);box-shadow:var(--shadow)}
+#drop .box .big{font-size:40px}
+#drop .box h3{margin:12px 0 4px;font-size:17px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+#drop .box p{margin:0;color:var(--muted);font-size:12.5px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);z-index:300;opacity:0;
+  background:var(--charcoal);color:#F1F1F1;border-left:4px solid var(--sage);border-radius:10px;
+  padding:13px 18px;font-size:13px;box-shadow:var(--shadow);transition:opacity .3s,transform .3s;max-width:80vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.err{border-left-color:var(--vino-soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="wordmark">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2"/></svg>
+        <b>URA</b><span>Industries</span>
+      </div>
+      <div><h1>Flujo Productivo</h1><div class="sub">Hoja de ruta por proceso</div></div>
+    </div>
+    <div class="controls">
+      <div class="upd">Última actualización<br><b id="updstamp">—</b></div>
+      <button class="btn cta" id="reloadBtn" title="Actualizar desde el Excel del repositorio">Actualizar</button>
+      <button class="btn" id="pdfBtn" title="Descargar resumen PDF">PDF</button>
+      <button class="btn" id="xlsBtn" title="Descargar Excel">Excel</button>
+      <button class="btn" id="themeBtn" title="Cambiar tema">Oscuro</button>
+      <button class="btn hidden" id="loadBtn" title="Cargar Excel manualmente">Cargar Excel</button>
+      <input type="file" id="fileInput" class="hidden" accept=".xlsx,.xls,.csv">
+    </div>
+  </header>
+  <div class="kpis" id="kpis"></div>
+  <div class="toprow">
+    <div class="panel"><h4>Evolución de pendientes</h4><p class="ph">Pendientes por proceso en cada carga registrada.</p><div class="cx"><canvas id="chartProc"></canvas></div></div>
+    <div class="panel"><h4>Distribución actual</h4><p class="ph">Reparto de ítems entre procesos.</p><div class="cx"><canvas id="chartDona"></canvas></div></div>
+  </div>
+  <div class="toolbar">
+    <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="q" placeholder="Buscar ítem, cliente, referencia o proyecto en todas las colas…"></div>
+  </div>
+  <div class="section-title"><div class="ttl">Desarrollo <span class="tag">Máxima prioridad · Aprobado + Telas OK</span></div><div class="rule" style="background:var(--dev)"></div></div>
+  <div class="grid dev-grid" id="dev"></div>
+  <div class="section-title"><div class="ttl">Materias Primas <span class="tag">Telas Pendiente</span></div><div class="rule" style="background:var(--mp)"></div></div>
+  <div class="grid" id="mp"></div>
+  <div class="section-title"><div class="ttl">Abastecimiento <span class="tag">Revisado con rechazo · Pendiente llegada tela</span></div><div class="rule" style="background:var(--ab)"></div></div>
+  <div class="grid" id="ab"></div>
+  <div class="section-title"><div class="ttl">Diseño <span class="tag">Modelado / Pendiente modelación</span></div><div class="rule" style="background:var(--dis)"></div></div>
+  <div class="grid" id="dis"></div>
+  <div class="section-title"><div class="ttl">Memoria <span class="tag">Historial de actualizaciones</span></div><div class="rule"></div></div>
+  <div class="panel">
+    <div class="mem-head"><span>Historial guardado en este navegador · se actualiza al abrir.</span><button class="linkbtn" id="clearMem">Borrar memoria</button></div>
+    <div class="mem-list" id="memlist"></div>
+  </div>
+  <footer>
+    <div class="tagline">Ropa de alta calidad <b>hecha</b><br><b>en condiciones justas</b></div>
+    <div class="fbrand">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.2"/></svg>
+      <div><div class="u"><b>URA</b> <span>Industries</span></div><div class="url">www.uraindustries.com</div></div>
+    </div>
+  </footer>
+</div>
+<div id="drop"><div class="box"><div class="big">&#8595;</div><h3>Suelta el Excel aquí</h3><p>“Aprobados y revisión de calidad” (.xlsx / .csv)</p></div></div>
+<div id="toast"></div>
+<script id="payload" type="application/json">{"generado": "2026-08-01 09:09", "archivo": "datos.xlsx", "counts": {"total": 96, "aprobados": 63, "desarrollo_total": 36, "patronaje": 7, "ingenieria": 5, "trazo": 23, "finalizados": 6, "materias_primas": 0, "abastecimiento": 7, "ab_rechazo": 7, "ab_llegada": 0, "diseno": 33}, "colas": {"desarrollo": {"patronaje": [{"id": "3164", "ref": "95428", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BODY", "estado": "Aprobado", "patronaje": "Sin iniciar", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3175", "ref": "95637", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BUZO", "estado": "Aprobado", "patronaje": "Sin iniciar", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3189", "ref": "95653", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Sin iniciar", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3236", "ref": "95710", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BODY", "estado": "Aprobado", "patronaje": "Sin iniciar", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "4763", "ref": "97419", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Sin iniciar", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "4775", "ref": "97453", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Sin iniciar", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3495", "ref": "96256", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Sin iniciar", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}], "ingenieria": [{"id": "3156", "ref": "95414", "cliente": "MATTELSA", "proyecto": "1026", "categoria": "JOGGER", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3178", "ref": "95642", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3210", "ref": "95683", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "SHORT", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3272", "ref": "95944", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BODY", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3508", "ref": "96269", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}], "trazo": [{"id": "3123", "ref": "95365", "cliente": "MATTELSA", "proyecto": "1026", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3133", "ref": "95377", "cliente": "MATTELSA", "proyecto": "1026", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3156", "ref": "95414", "cliente": "MATTELSA", "proyecto": "1026", "categoria": "JOGGER", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3178", "ref": "95642", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3188", "ref": "95652", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3190", "ref": "95654", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3200", "ref": "95664", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3203", "ref": "95667", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "POLO", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3205", "ref": "95672", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "JOGGER", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3210", "ref": "95683", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "SHORT", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3218", "ref": "95691", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3219", "ref": "95692", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3240", "ref": "95714", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BODY", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3272", "ref": "95944", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BODY", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3277", "ref": "95949", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "TOP", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "4715", "ref": "97704", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "TANK", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "4744", "ref": "97957", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "JOGGER", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "4771", "ref": "97449", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "4779", "ref": "97696", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "POLO", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3508", "ref": "96269", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3517", "ref": "96278", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3577", "ref": "96338", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "BODY", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "4820", "ref": "JOGGER URA_DTC_26(JULIO 26 7)", "cliente": "URA", "proyecto": "DOTACION JULIO 2026", "categoria": "JOGGER", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}], "finalizados": [{"id": "2964", "ref": "94853", "cliente": "MATTELSA", "proyecto": "1026", "categoria": "BUZO", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}, {"id": "3135", "ref": "95379", "cliente": "MATTELSA", "proyecto": "1026", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}, {"id": "3146", "ref": "95404", "cliente": "MATTELSA", "proyecto": "1026", "categoria": "BUZO", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}, {"id": "3183", "ref": "95647", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}, {"id": "3215", "ref": "95688", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BUZO", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}, {"id": "5232", "ref": "BUZO AMT_SEP(HALFZIP CLASSIC-AZUL)", "cliente": "ARMATURA", "proyecto": "SEPTIEMBRE", "categoria": "BUZO", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}]}, "materias_primas": [], "abastecimiento": {"rechazo": [{"id": "3118", "ref": "95360", "cliente": "MATTELSA", "proyecto": "1026", "categoria": "CAMISA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "REVISADO - CON RECHAZO"}, {"id": "3152", "ref": "95410", "cliente": "MATTELSA", "proyecto": "1026", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "REVISADO - CON RECHAZO"}, {"id": "3039", "ref": "94998", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BODY", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "REVISADO - CON RECHAZO"}, {"id": "3274", "ref": "95946", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BUZO", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "REVISADO - CON RECHAZO"}, {"id": "2934", "ref": "94598", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "JEAN", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "REVISADO - CON RECHAZO"}, {"id": "3357", "ref": "96067", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Aprobado", "patronaje": "Finalizado", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "REVISADO - CON RECHAZO"}, {"id": "2799", "ref": "93741", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "PANTALÓN", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "REVISADO - CON RECHAZO"}], "llegada": []}, "diseno": [{"id": "2814", "ref": "93774", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "PANTALÓN", "estado": "Modelado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}, {"id": "3713", "ref": "97274", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "PANTALÓN", "estado": "Modelado", "patronaje": "Sin iniciar", "ingenieria": "Sin iniciar", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "2813", "ref": "93773", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "PANTALÓN", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}, {"id": "3275", "ref": "95947", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}, {"id": "4766", "ref": "97444", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Sin iniciar", "ingenieria": "Finalizado", "trazo": "Sin iniciar", "telas": "TELAS OK"}, {"id": "3507", "ref": "96268", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "TELAS OK"}, {"id": "2799", "ref": "93741", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "PANTALÓN", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "REVISADO - CON RECHAZO"}, {"id": "2939", "ref": "94610", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "PANTALÓN", "estado": "Modelado", "patronaje": "Sin iniciar", "ingenieria": "Sin iniciar", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3383", "ref": "96093", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Modelado", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3187", "ref": "95651", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3238", "ref": "95712", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "BODY", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3283", "ref": "95971", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "JOGGER", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3681", "ref": "97137", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "PANTALÓN", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "4782", "ref": "97710", "cliente": "MATTELSA", "proyecto": "1126", "categoria": "TANK", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "2947", "ref": "94633", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "PANTALÓN", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3332", "ref": "96042", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3333", "ref": "96043", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3335", "ref": "96045", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3348", "ref": "96058", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3362", "ref": "96072", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3380", "ref": "96090", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3391", "ref": "96101", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3445", "ref": "96205", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "SHORT", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3457", "ref": "96217", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "TANK", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3458", "ref": "96218", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "TANK", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3464", "ref": "96224", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "TANK", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3465", "ref": "96225", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "TANK", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3501", "ref": "96262", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "CAMISETA", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3573", "ref": "96334", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "BODY", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3579", "ref": "96340", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "BODY", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3582", "ref": "96343", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "BODY", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3585", "ref": "96346", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "BODY", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}, {"id": "3588", "ref": "96349", "cliente": "MATTELSA", "proyecto": "1226", "categoria": "BODY", "estado": "Pendiente modelación", "patronaje": "Finalizado", "ingenieria": "Finalizado", "trazo": "Finalizado", "telas": "PENDIENTE"}]}, "history": [{"fecha": "2026-08-01", "aprobados": 63, "desarrollo": 36, "patronaje": 7, "ingenieria": 5, "trazo": 23, "materias_primas": 0, "abastecimiento": 7, "diseno": 33, "total": 96}], "uploads": [{"ts": "2026-08-01 09:09", "fecha": "2026-08-01", "archivo": "datos.xlsx", "aprobados": 63, "desarrollo": 36, "patronaje": 7, "ingenieria": 5, "trazo": 23, "materias_primas": 0, "abastecimiento": 7, "diseno": 33, "total": 96}]}</script>
+<script>
+const $=s=>document.querySelector(s);
+const SEED=JSON.parse(document.getElementById('payload').textContent);
+const LS_KEY='ura-flujo-state';
+let DATA;
+function loadState(){try{const s=localStorage.getItem(LS_KEY);if(s)return JSON.parse(s);}catch(e){}return null;}
+function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(DATA));}catch(e){}}
+DATA=loadState()||SEED;
+DATA.history=DATA.history||[];DATA.uploads=DATA.uploads||[];
+const themeBtn=$('#themeBtn');
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);
+  themeBtn.textContent=t==='dark'?'Claro':'Oscuro';
+  try{localStorage.setItem('ura-theme',t);}catch(e){}
+  if(window._charts)renderCharts();}
+let savedT='light';
+try{savedT=localStorage.getItem('ura-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');}catch(e){}
+applyTheme(savedT);
+themeBtn.onclick=()=>applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');
+const PRIO_ESTADO={'Aprobado':0,'Modelado':1,'Pendiente modelación':2};
+const PRIO_TELAS={'TELAS OK':0,'REVISADO - CON RECHAZO':1,'PENDIENTE REVISIÓN CALIDAD':2,'PENDIENTE LLEGADA TELA':3};
+function idnum(i){const n=parseInt(i.id,10);return isNaN(n)?1e12:n;}
+function projkey(i){const d=(i.proyecto||'').trim();if(d.length>=3&&/^[0-9]+$/.test(d)){return [0,parseInt(d.slice(-2),10),parseInt(d.slice(0,-2),10)];}return [1,99,99];}
+function cmp(a,b){for(let k=0;k<Math.min(a.length,b.length);k++){if(a[k]<b[k])return -1;if(a[k]>b[k])return 1;}return 0;}
+function bySort(keyfn){return (a,b)=>cmp(keyfn(a),keyfn(b));}
+function computeColas(items){
+  const dev=items.filter(i=>i.estado==='Aprobado'&&i.telas==='TELAS OK');
+  const kDev=i=>[...projkey(i),idnum(i)];
+  const q_pat=dev.filter(i=>i.patronaje==='Sin iniciar').sort(bySort(kDev));
+  const q_ing=dev.filter(i=>i.patronaje==='Finalizado'&&i.ingenieria==='Sin iniciar').sort(bySort(kDev));
+  const q_tra=dev.filter(i=>i.patronaje==='Finalizado'&&i.trazo==='Sin iniciar').sort(bySort(kDev));
+  const q_fin=dev.filter(i=>i.patronaje==='Finalizado'&&i.ingenieria==='Finalizado'&&i.trazo==='Finalizado').sort(bySort(kDev));
+  const kEP=i=>[(PRIO_ESTADO[i.estado]??9),...projkey(i),idnum(i)];
+  const mp=items.filter(i=>i.telas==='PENDIENTE REVISIÓN CALIDAD').sort(bySort(kEP));
+  const ab_rechazo=items.filter(i=>i.telas==='REVISADO - CON RECHAZO').sort(bySort(kEP));
+  const ab_llegada=items.filter(i=>i.telas==='PENDIENTE LLEGADA TELA').sort(bySort(kEP));
+  const dis=items.filter(i=>i.estado==='Modelado'||i.estado==='Pendiente modelación')
+    .sort(bySort(i=>[(PRIO_TELAS[i.telas]??9),(PRIO_ESTADO[i.estado]??9),...projkey(i),idnum(i)]));
+  const aprobados=items.filter(i=>i.estado==='Aprobado').length;
+  return {colas:{desarrollo:{patronaje:q_pat,ingenieria:q_ing,trazo:q_tra,finalizados:q_fin},materias_primas:mp,
+      abastecimiento:{rechazo:ab_rechazo,llegada:ab_llegada},diseno:dis},
+    counts:{total:items.length,aprobados:aprobados,desarrollo_total:dev.length,patronaje:q_pat.length,ingenieria:q_ing.length,
+      trazo:q_tra.length,finalizados:q_fin.length,materias_primas:mp.length,
+      abastecimiento:ab_rechazo.length+ab_llegada.length,ab_rechazo:ab_rechazo.length,ab_llegada:ab_llegada.length,diseno:dis.length}};
+}
+const norm=v=>v==null?'':(''+v).trim();
+function parseWorkbook(wb){
+  const shName=wb.SheetNames.find(n=>n.toLowerCase().includes('reporte'))||wb.SheetNames[0];
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[shName],{defval:''});
+  const key=(r,names)=>{for(const n of names){for(const k in r){if(k.trim().toLowerCase()===n.toLowerCase())return r[k];}}return '';};
+  return rows.filter(r=>norm(key(r,['Producto']))!=='').map(r=>({
+    id:norm(key(r,['Producto'])),ref:norm(key(r,['Referencia cliente'])),cliente:norm(key(r,['Cliente'])),
+    proyecto:norm(key(r,['proyecto'])),categoria:norm(key(r,['Categoría','Categoria'])),estado:norm(key(r,['Estado'])),
+    patronaje:norm(key(r,['Patronaje'])),ingenieria:norm(key(r,['Ingeniería','Ingenieria'])),
+    trazo:norm(key(r,['Trazo'])),telas:norm(key(r,['ESTADO CALIDAD TELAS'])),
+  }));
+}
+const DATA_FILE='datos.xlsx';  /* Excel en el mismo repositorio (GitHub Pages) */
+
+function applyWorkbook(wb,nombre,fuente){
+  const items=parseWorkbook(wb);
+  if(!items.length){toast('No se encontraron ítems. ¿La hoja "Reporte PLM" está en el archivo?',true);return false;}
+  const {colas,counts}=computeColas(items);
+  const now=new Date(),pad=n=>(''+n).padStart(2,'0');
+  const fecha=now.getFullYear()+'-'+pad(now.getMonth()+1)+'-'+pad(now.getDate());
+  const ts=fecha+' '+pad(now.getHours())+':'+pad(now.getMinutes());
+  const snap={aprobados:counts.aprobados,desarrollo:counts.desarrollo_total,patronaje:counts.patronaje,ingenieria:counts.ingenieria,
+    trazo:counts.trazo,materias_primas:counts.materias_primas,abastecimiento:counts.abastecimiento,diseno:counts.diseno,total:counts.total};
+  DATA.history=(DATA.history||[]).filter(h=>h.fecha!==fecha);
+  DATA.history.push({fecha,...snap});DATA.history.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  DATA.uploads=(DATA.uploads||[]).filter(u=>u.fecha!==fecha);
+  DATA.uploads.push({ts,fecha,archivo:nombre,fuente:fuente||'auto',...snap});
+  DATA.uploads.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  DATA.generado=ts;DATA.archivo=nombre;DATA.counts=counts;DATA.colas=colas;
+  saveState();renderAll();
+  return true;
+}
+async function autoLoad(silent){
+  const btn=$('#reloadBtn');const prev=btn.textContent;btn.textContent='Actualizando…';
+  try{
+    const res=await fetch(encodeURI(DATA_FILE)+'?t='+Date.now(),{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const buf=await res.arrayBuffer();
+    const ok=applyWorkbook(XLSX.read(new Uint8Array(buf),{type:'array'}),DATA_FILE,'auto');
+    if(ok&&!silent) toast('Datos actualizados desde el repositorio · '+DATA.counts.total+' ítems.');
+    $('#loadBtn').classList.add('hidden');
+  }catch(err){
+    $('#loadBtn').classList.remove('hidden');
+    toast('No se pudo leer '+DATA_FILE+' automáticamente ('+err.message+'). Si abriste el archivo localmente, súbelo a GitHub o cárgalo manualmente.',true);
+  }finally{btn.textContent=prev;}
+}
+function ingestManual(file){
+  const rd=new FileReader();
+  rd.onload=e=>{try{
+    const ok=applyWorkbook(XLSX.read(new Uint8Array(e.target.result),{type:'array'}),file.name,'manual');
+    if(ok) toast('Actualizado desde “'+file.name+'” · '+DATA.counts.total+' ítems.');
+  }catch(err){toast('No se pudo leer el archivo: '+err.message,true);}};
+  rd.readAsArrayBuffer(file);
+}
+$('#reloadBtn').onclick=()=>autoLoad(false);
+$('#loadBtn').onclick=()=>$('#fileInput').click();
+$('#fileInput').onchange=e=>{if(e.target.files[0])ingestManual(e.target.files[0]);e.target.value='';};
+$('#clearMem').onclick=()=>{if(confirm('¿Borrar la memoria guardada en este navegador?')){
+  try{localStorage.removeItem(LS_KEY);}catch(e){}DATA=JSON.parse(JSON.stringify(SEED));
+  DATA.history=DATA.history||[];DATA.uploads=DATA.uploads||[];renderAll();toast('Memoria borrada.');}};
+function toast(msg,err){const t=$('#toast');t.textContent=msg;t.className='show'+(err?' err':'');clearTimeout(t._h);t._h=setTimeout(()=>t.className='',3600);}
+function badgeEstado(e){const m={'Aprobado':'b-aprob','Modelado':'b-model','Pendiente modelación':'b-pmod'};return `<span class="badge ${m[e]||'b-pmod'}">${e||'—'}</span>`;}
+function badgeTelas(t){const m={'TELAS OK':'b-ok','PENDIENTE':'b-pend','REVISADO - CON RECHAZO':'b-rech'};const s={'REVISADO - CON RECHAZO':'RECHAZO'};return `<span class="badge ${m[t]||'b-pmod'}">${s[t]||t||'—'}</span>`;}
+function matchQ(it,q){if(!q)return true;q=q.toLowerCase();return [it.id,it.cliente,it.ref,it.proyecto,it.categoria].some(v=>(''+(v||'')).toLowerCase().includes(q));}
+function tabla(items,cols,q){
+  const f=items.filter(it=>matchQ(it,q));
+  if(!items.length)return `<div class="empty">Sin ítems en cola</div>`;
+  if(!f.length)return `<div class="empty">Sin coincidencias para “${q}”</div>`;
+  let h='<div class="tablewrap"><table><thead><tr>';cols.forEach(c=>h+=`<th>${c.t}</th>`);h+='</tr></thead><tbody>';
+  f.forEach((it,i)=>{h+='<tr>';cols.forEach(c=>h+=`<td>${c.f(it,i)}</td>`);h+='</tr>';});
+  return h+'</tbody></table></div>';}
+const rankCell=(i,idx)=>`<span class="rank ${idx<3?'top':''}">${idx+1}</span>`;
+const colDev=[{t:'Prio',f:rankCell},{t:'Proyecto',f:i=>`<span class="proj">${i.proyecto||'—'}</span>`},
+  {t:'Ítem',f:i=>`<span class="idpill">${i.id}</span>`},{t:'Cliente',f:i=>i.cliente},{t:'Ref.',f:i=>i.ref},{t:'Categoría',f:i=>i.categoria}];
+const colPri=[{t:'Prio',f:rankCell},{t:'Proyecto',f:i=>`<span class="proj">${i.proyecto||'—'}</span>`},
+  {t:'Ítem',f:i=>`<span class="idpill">${i.id}</span>`},{t:'Estado',f:i=>badgeEstado(i.estado)},{t:'Cliente',f:i=>i.cliente},{t:'Ref.',f:i=>i.ref}];
+const colDis=[{t:'Prio',f:rankCell},{t:'Proyecto',f:i=>`<span class="proj">${i.proyecto||'—'}</span>`},
+  {t:'Ítem',f:i=>`<span class="idpill">${i.id}</span>`},{t:'Telas',f:i=>badgeTelas(i.telas)},{t:'Estado',f:i=>badgeEstado(i.estado)},{t:'Cliente',f:i=>i.cliente}];
+const colFin=[{t:'Proyecto',f:i=>`<span class="proj">${i.proyecto||'—'}</span>`},
+  {t:'Ítem',f:i=>`<span class="idpill">${i.id}</span>`},{t:'Cliente',f:i=>i.cliente},{t:'Ref.',f:i=>i.ref},{t:'Categoría',f:i=>i.categoria}];
+function cardsDef(){const dev=DATA.colas.desarrollo;return[
+  {p:'dev',cap:'var(--dev)',title:'<span class="step">1</span>Patronaje',hint:'ATENDER: Patronaje “Sin iniciar”. Orden por proyecto (menor = mayor prioridad).',items:dev.patronaje,cols:colDev},
+  {p:'dev',cap:'var(--dev)',title:'<span class="step">2</span>Ingeniería',hint:'ATENDER: Patronaje “Finalizado” + Ingeniería “Sin iniciar”.',items:dev.ingenieria,cols:colDev},
+  {p:'dev',cap:'var(--dev)',title:'<span class="step">3</span>Trazo',hint:'ATENDER: Patronaje “Finalizado” + Trazo “Sin iniciar”.',items:dev.trazo,cols:colDev},
+  {p:'dev',cap:'var(--brand)',title:'Finalizados',hint:'Aprobado + TELAS OK con Patronaje, Ingeniería y Trazo finalizados · listos para producción.',items:dev.finalizados,cols:colFin},
+  {p:'mp',cap:'var(--mp)',title:'Cola priorizada',hint:'Telas PENDIENTE · orden por proyecto, luego Aprobado → Modelado → Pend. modelación.',items:DATA.colas.materias_primas,cols:colPri},
+  {p:'ab',cap:'var(--ab)',title:'Revisado con rechazo',hint:'Telas revisadas con rechazo · orden Aprobado → Modelado → Pend. modelación, luego proyecto.',items:DATA.colas.abastecimiento.rechazo,cols:colPri},
+  {p:'ab',cap:'var(--ab)',title:'Pendiente llegada tela',hint:'La tela aún no llega · orden Aprobado → Modelado → Pend. modelación, luego proyecto.',items:DATA.colas.abastecimiento.llegada,cols:colPri},
+  {p:'dis',cap:'var(--dis)',title:'Cola priorizada',hint:'Modelado / Pend. modelación · orden por proyecto, luego TELAS OK → RECHAZO → PENDIENTE.',items:DATA.colas.diseno,cols:colDis}];}
+function renderCards(q){
+  ['dev','mp','ab','dis'].forEach(id=>$('#'+id).innerHTML='');
+  cardsDef().forEach((d,idx)=>{const el=document.createElement('div');el.className='card';el.style.animationDelay=(idx*60)+'ms';
+    const shown=d.items.filter(it=>matchQ(it,q)).length;
+    el.innerHTML=`<div class="cap" style="background:${d.cap}"></div>`+
+      `<h3><span class="lbl">${d.title}</span><span class="cnt">${q?shown+'/'+d.items.length:d.items.length}</span></h3>`+
+      `<div class="hint">${d.hint}</div>`+tabla(d.items,d.cols,q);
+    $('#'+d.p).appendChild(el);});
+}
+function renderKpis(){
+  const c=DATA.counts,prev=DATA.history.length>1?DATA.history[DATA.history.length-2]:null;
+  const dh=k=>{if(!prev)return '';const pk=k==='desarrollo_total'?'desarrollo':k;const d=c[k]-prev[pk];
+    if(isNaN(d)||d===0)return `<div class="delta flat">→ sin cambio</div>`;
+    const cls=d>0?'up':'down',a=d>0?'▲':'▼';return `<div class="delta ${cls}">${a} ${Math.abs(d)} vs. carga previa</div>`;};
+  const ks=[{n:c.total,l:'Ítems totales',k:'total',col:'var(--charcoal)'},{n:c.aprobados||0,l:'Aprobados (estado)',k:'aprobados',col:'var(--sage-deep)'},{n:c.desarrollo_total,l:'Desarrollo',k:'desarrollo_total',col:'var(--dev)'},
+    {n:c.materias_primas,l:'Materias Primas',k:'materias_primas',col:'var(--mp)'},{n:c.abastecimiento,l:'Abastecimiento',k:'abastecimiento',col:'var(--ab)'},
+    {n:c.diseno,l:'Diseño',k:'diseno',col:'var(--dis)'}];
+  $('#kpis').innerHTML=ks.map(k=>`<div class="kpi"><div class="top"><i style="background:${k.col}"></i><span class="l">${k.l}</span></div>
+    <div class="n" data-to="${k.n}">0</div>${dh(k.k)}</div>`).join('');
+  document.querySelectorAll('.kpi .n').forEach(el=>{const to=+el.dataset.to,dur=850,t0=performance.now();
+    (function step(t){const p=Math.min(1,(t-t0)/dur);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(step);})(t0);});
+}
+function renderMem(){const ups=(DATA.uploads||[]).slice().reverse();
+  $('#memlist').innerHTML=ups.length?ups.map(u=>`<div class="mem-item"><span class="dotm"></span>
+    <span class="fn">${u.archivo||'archivo'}</span><span class="tt">${u.ts}</span><span class="tag">${u.total} ítems</span></div>`).join('')
+    :'<div class="empty">Aún no hay cargas registradas</div>';}
+window._charts={proc:null,dona:null};
+function cssv(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+function renderCharts(){
+  if(typeof Chart==='undefined')return;
+  const c=DATA.counts,H=DATA.history,labels=H.map(h=>h.fecha.slice(5));
+  const grid=cssv('--line'),ink=cssv('--muted');
+  for(const k in window._charts){if(window._charts[k])window._charts[k].destroy();}
+  Chart.defaults.font.family="'Archivo',sans-serif";
+  const opt={responsive:true,maintainAspectRatio:false,animation:{duration:800},
+    plugins:{legend:{labels:{color:ink,boxWidth:10,font:{size:11},usePointStyle:true}}},
+    scales:{x:{ticks:{color:ink},grid:{color:grid}},y:{beginAtZero:true,ticks:{color:ink},grid:{color:grid}}}};
+  const L=(name,key,col)=>({label:name,data:H.map(h=>h[key]),borderColor:col,backgroundColor:col+'20',tension:.3,fill:false,pointRadius:2.5,pointHoverRadius:5,borderWidth:2.2});
+  window._charts.proc=new Chart($('#chartProc'),{type:'line',data:{labels,datasets:[
+    L('Desarrollo','desarrollo',cssv('--dev')),L('Materias Primas','materias_primas',cssv('--mp')),
+    L('Abastecimiento','abastecimiento',cssv('--ab')),L('Diseño','diseno',cssv('--dis'))]},options:opt});
+  window._charts.dona=new Chart($('#chartDona'),{type:'doughnut',
+    data:{labels:['Desarrollo','Materias Primas','Abastecimiento','Diseño'],
+      datasets:[{data:[c.desarrollo_total,c.materias_primas,c.abastecimiento,c.diseno],
+      backgroundColor:[cssv('--dev'),cssv('--mp'),cssv('--ab'),cssv('--dis')],borderWidth:2,borderColor:cssv('--panel'),hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'64%',animation:{animateRotate:true,duration:800},
+      plugins:{legend:{position:'right',labels:{color:ink,boxWidth:10,font:{size:11},usePointStyle:true}}}}});
+}
+function renderAll(){$('#updstamp').textContent=DATA.generado;renderKpis();renderCards($('#q').value.trim());renderMem();renderCharts();}
+let qt;$('#q').addEventListener('input',e=>{clearTimeout(qt);qt=setTimeout(()=>renderCards(e.target.value.trim()),120);});
+renderAll();
+autoLoad(true);
+$('#xlsBtn').onclick=()=>{
+  const c=DATA.counts,dev=DATA.colas.desarrollo;const wb=XLSX.utils.book_new();
+  const base=it=>({Prioridad:'',Proyecto:it.proyecto,Item:it.id,Estado:it.estado,Cliente:it.cliente,Referencia:it.ref,Categoria:it.categoria,Telas:it.telas});
+  const rk=arr=>arr.map((it,i)=>({...base(it),Prioridad:i+1}));
+  const add=(name,rows)=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows.length?rows:[{Item:'—'}]),name.slice(0,31));
+  add('Resumen',[{Proceso:'TOTAL',Items:c.total},{Proceso:'Aprobados (estado)',Items:c.aprobados||0},{Proceso:'Desarrollo',Items:c.desarrollo_total},
+    {Proceso:'  Patronaje',Items:c.patronaje},{Proceso:'  Ingeniería',Items:c.ingenieria},{Proceso:'  Trazo',Items:c.trazo},
+    {Proceso:'Materias Primas',Items:c.materias_primas},{Proceso:'Abastecimiento (total)',Items:c.abastecimiento},
+    {Proceso:'  Rechazo',Items:c.ab_rechazo},{Proceso:'  Llegada tela',Items:c.ab_llegada},{Proceso:'Diseño',Items:c.diseno}]);
+  add('Dev-Patronaje',rk(dev.patronaje));add('Dev-Ingenieria',rk(dev.ingenieria));add('Dev-Trazo',rk(dev.trazo));
+  add('Materias Primas',rk(DATA.colas.materias_primas));add('Abast-Rechazo',rk(DATA.colas.abastecimiento.rechazo));add('Abast-Llegada tela',rk(DATA.colas.abastecimiento.llegada));add('Diseno',rk(DATA.colas.diseno));
+  XLSX.writeFile(wb,'URA_flujo_'+DATA.generado.slice(0,10)+'.xlsx');
+};
+$('#pdfBtn').onclick=()=>{
+  const c=DATA.counts,dev=DATA.colas.desarrollo;const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'pt',format:'a4'});const W=doc.internal.pageSize.getWidth();
+  doc.setFillColor(45,45,45);doc.rect(0,0,W,56,'F');doc.setTextColor(241,241,241);doc.setFontSize(16);
+  doc.text('URA INDUSTRIES · FLUJO PRODUCTIVO',30,27);doc.setFontSize(10);doc.setTextColor(194,197,169);
+  doc.text('Hoja de ruta por proceso  ·  Actualizado: '+DATA.generado,30,44);doc.setTextColor(45,45,45);
+  doc.autoTable({startY:70,head:[['Proceso','Items']],theme:'grid',headStyles:{fillColor:[45,45,45]},styles:{fontSize:9,font:'helvetica'},
+    body:[['TOTAL',c.total],['Aprobados (estado)',c.aprobados||0],['Desarrollo',c.desarrollo_total],['  Patronaje',c.patronaje],['  Ingenieria',c.ingenieria],['  Trazo',c.trazo],
+    ['Materias Primas',c.materias_primas],['Abastecimiento (total)',c.abastecimiento],['  Rechazo',c.ab_rechazo],['  Llegada tela',c.ab_llegada],['Diseno',c.diseno]],tableWidth:250});
+  [['DESARROLLO - PATRONAJE',dev.patronaje],['DESARROLLO - INGENIERIA',dev.ingenieria],['DESARROLLO - TRAZO',dev.trazo],
+   ['MATERIAS PRIMAS',DATA.colas.materias_primas],['ABASTECIMIENTO - RECHAZO',DATA.colas.abastecimiento.rechazo],['ABASTECIMIENTO - PENDIENTE LLEGADA TELA',DATA.colas.abastecimiento.llegada],['DISENO',DATA.colas.diseno]]
+  .forEach(([t,items])=>{doc.addPage();doc.setFontSize(13);doc.setTextColor(88,33,40);doc.text(t,30,40);doc.setTextColor(45,45,45);
+    const head=[['#','Proyecto','Item','Estado','Cliente','Ref.','Telas']];
+    const body=items.map((it,i)=>[i+1,it.proyecto,it.id,it.estado,it.cliente,it.ref,it.telas]);
+    doc.autoTable({startY:52,head,body:body.length?body:[['—']],theme:'striped',headStyles:{fillColor:[45,45,45]},styles:{fontSize:8,font:'helvetica'}});});
+  doc.save('URA_flujo_'+DATA.generado.slice(0,10)+'.pdf');
+};
+</script>
+</body>
+</html>
